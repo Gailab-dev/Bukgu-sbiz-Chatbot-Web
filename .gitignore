@@ -1,0 +1,29 @@
+# Node/React build artifacts
+node_modules/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Gradle / Java artifacts
+backend/.gradle/
+backend/build/
+backend/out/
+backend/*.log
+
+# IDE & editor folders
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*

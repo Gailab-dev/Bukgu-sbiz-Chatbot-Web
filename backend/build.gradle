@@ -1,0 +1,76 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+
+// React build 자동 복사 설정
+def frontendDir = "../frontend"
+
+// Windows인지 확인 후 npm 명령 다르게 설정
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+def npmCommand = isWindows ? 'npm.cmd' : 'npm'
+
+task installReact(type: Exec) {
+    workingDir frontendDir
+    commandLine npmCommand, 'install'
+}
+
+task buildReact(type: Exec) {
+    workingDir frontendDir
+    commandLine npmCommand, 'run', 'build'
+}
+
+task cleanReactBuildOutput(type: Delete) {
+    delete "${projectDir}/src/main/resources/static"
+}
+
+task copyReactBuild(type: Copy) {
+    dependsOn buildReact, cleanReactBuildOutput
+    from "${frontendDir}/build"
+    into "${projectDir}/src/main/resources/static"
+}
+
+processResources.dependsOn(copyReactBuild)
+
+// React 수정 → 빌드 → Spring Boot 실행 자동화 명령
+tasks.register('runFullStack') {
+    dependsOn 'clean', 'buildReact', 'copyReactBuild'
+    finalizedBy 'bootRun'
+}
