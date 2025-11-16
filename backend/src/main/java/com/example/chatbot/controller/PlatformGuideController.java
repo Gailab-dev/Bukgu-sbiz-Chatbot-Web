@@ -8,7 +8,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chatbot")
 @RequiredArgsConstructor
-public class ChatbotController {
+public class PlatformGuideController {
 
     private final FastApiService fastApiService;
 

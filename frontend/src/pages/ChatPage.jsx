@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect, useLayoutEffect } from "react";
 import axios from "axios";
 import { sendMessage, callService } from "../api/chatApi";
 
@@ -14,7 +14,7 @@ export default function ChatPage() {
   // 봇 대화창에 표시되는 전체 메시지 목록
   // messages(배열 (객체[])) : 대화창에 표시되는 메시지 목록을 저장
   //setMessages()(함수) : 배열 상태를 변경하는 함수 (React 자동 제공)
-  //각 메시지는 {from: "user" | "bot", text: "..."} 형태로 저장
+  //각 메시지는 {from: "user" | "bot", text: "..."} 형태로 저장  
   const [messages, setMessages] = useState([
     {
       from: "bot",
@@ -56,6 +56,7 @@ export default function ChatPage() {
   // 선택된 지원사업 카테고리("금융", "내수", "경영", "전체")
   // categories(배열 (string[])) : 지원사업 카테고리 목록을 저장
   const categories = ["금융", "내수", "경영", "전체"];
+
   /* -----------------------------------------------------
   2. 로그인 여부 세션 확인 (최초 1회)
   ----------------------------------------------------- */
@@ -68,7 +69,6 @@ export default function ChatPage() {
       })
       .catch(() => setUsername(null));
   }, []);
-
   /* -----------------------------------------------------
   3. 로그인 버튼 클릭 시 동작
   ----------------------------------------------------- */
@@ -90,19 +90,79 @@ export default function ChatPage() {
     e.preventDefault();
     if (!input.trim()) return; // 공백 방지
 
-    // 사용자 메시지 추가
-    setMessages((prev) => [...prev, { from: "user", text: input }]);
-    
-    // FastAPI에 의도분류 요청
-    const res = await sendMessage(input);
-    
-    // 봇 응답 메시지 추가
-    setMessages((prev) => [
-      ...prev,
-      { from: "bot", text: res.message || JSON.stringify(res) },
-    ]);
+    const userInput = input.trim();
 
+    // 1️⃣ 사용자 메시지 추가
+    setMessages((prev) => [...prev, { from: "user", text: userInput }]);
     setInput(""); // 입력창 초기화
+
+    try {
+      // 2️⃣ FastAPI 의도 분류 요청
+      const res = await axios.post("http://localhost:8080/api/chatbot/intent-classification", {
+        text: userInput,
+      });
+
+      const intent = res.data.intent;
+      const confidence = res.data.confidence;
+
+      console.log("🎯 Intent:", intent, "| Confidence:", confidence);
+
+      // 3️⃣ confidence ≤ 0.6 → 이해 실패
+      if (confidence <= 0.6) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            from: "bot",
+            text: "질문을 잘 이해하지 못했어요.\n아래 버튼을 눌러 원하시는 내용을 찾아주시거나, 다시 질문해주세요.",
+          },
+        ]);
+        // ✅ 메뉴 다시 펼치기 (GUI 버튼 보이기)
+        setIsMenuOpen(true);        
+        return;
+      }
+
+      // 4️⃣ confidence > 0.6 → intent별 분기 처리
+      switch (intent) {
+        case "program_recommendation":
+          await handleRecommendProgram();
+          break;
+
+        case "program_info":
+          setMessages((prev) => [
+            ...prev,
+            {
+              from: "bot",
+              text: "어떤 지역의 지원사업 정보를 원하시나요?",
+              subButtons: ["광주광역시 지원사업", "일반 지원사업"],
+            },
+          ]);
+          break;
+
+        case "platform_guide":
+          await handlePlatformGuide(userInput);
+          break;
+
+        case "faq_search":
+          await handleFaqSearch(userInput);
+          break;
+
+        default:
+          setMessages((prev) => [
+            ...prev,
+            {
+              from: "bot",
+              text: "죄송합니다. 이 질문에 대한 처리를 아직 지원하지 않습니다.",
+            },
+          ]);
+          break;
+      }
+    } catch (err) {
+      console.error("❌ 의도 분류 API 오류:", err);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "서버 연결에 문제가 발생했습니다." },
+      ]);
+    }
   };
 
   /* -----------------------------------------------------
@@ -160,8 +220,30 @@ export default function ChatPage() {
           text: "그 외 다른 기능이 궁금하다면 저에게 물어보세요!",
         },
       ]);
+      return; // 함수의 조기 종료
+    }
+
+    // "자주 묻는 질문" 클릭 시 하위 버튼 표시
+    if (type === "faq") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text: "자주 묻는 질문 중 어떤 것이 궁금하신가요?",
+          subButtons: [
+            "소상공인 지원 플랫폼이란?",
+            "소상공인 지원사업이란?",
+            "문의 및 상담 방법",
+          ],
+        },
+        {
+          from: "bot",
+          text: "그 외 다른 기능이 궁금하다면 저에게 물어보세요!",
+        },
+      ]);
       return;
     }
+
     // 🔹 기본 로직 (나머지 버튼은 FastAPI 호출)
     const res = await callService(type);
     setMessages((prev) => [
@@ -171,113 +253,325 @@ export default function ChatPage() {
   };
 
   /* -----------------------------------------------------
-  6. "소상공인 지원사업" 하위 버튼(지원사업 추천, 북구청 지원사업, 광주광역시 지원사업, 일반 지원사업) 클릭 시 동작
+  6. 상위에서 클릭 라벨을 받아 분기 처리
   ----------------------------------------------------- */
   const handleSubButton = async (label) => {
     // 사용자 메시지에 사용자가 클릭한 버튼 이름 추가
     setMessages((prev) => [...prev, { from: "user", text: `${label}` }]);
 
-    /* -------------------
-    6-1. 플랫폼 내 북구청지원사업 추천
-    ------------------- */
-    if (label === "지원사업 추천") {
-      try {
-        // 백엔드(Spring Boot) 요청
-        const res = await axios.post(
-          "http://localhost:8080/api/chatbot/recommend-programs",
-          {},
-          { withCredentials: true }
-        );
+    // 하위 버튼 라벨에 따른 분기 처리(기능별로 하위 함수에 위임)
+    //  
+    if (label === "지원사업 추천") return handleRecommendProgram();
+    if (label === "북구청 지원사업") return handleBukguProgram(); // 추후 구현 예정
+    if (label === "광주광역시 지원사업") return handleGwangjuProgram();
+    if (label === "일반 지원사업") return handleGeneralProgram();
+    if (label === "더보기") return handleMoreClick();
+    if (label === "처음으로") return handleRestartClick();
+    if (["회원가입 및 로그인", "마이페이지 기능", "사업 검색 및 신청"].includes(label))
+      return handlePlatformGuide(label);  
+    if (["소상공인 지원 플랫폼이란?", "소상공인 지원사업이란?", "문의 및 상담 방법"].includes(label))
+      return handleFaqSearch(label);    
+  };
+  /* -----------------------------------------------------
+  6-1. 지원사업 추천 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleRecommendProgram = async () => {
+    try {
+      // 백엔드(Spring Boot) 요청
+      const res = await axios.post(
+        "http://localhost:8080/api/chatbot/recommend-programs",
+        {},
+        { withCredentials: true }
+      );
 
-        // 로그인 안 된 경우
-        if (!res.data.loggedIn) {
-          setMessages((prev) => [
-            ...prev,
-            { from: "bot", text: res.data.message },
-          ]);
-          return;
-        }
-
-        // FastAPI 응답에서 program_list 추출
-        const programs = res?.data?.data?.program_list ?? [];
-        
-        // 봇 메시지에 추천 사업 목록 추가(프로그램 리스트를 버튼으로 표시)
+      // 🔹 로그인 안 된 경우 처리
+      if (!res.data.loggedIn) {
         setMessages((prev) => [
           ...prev,
-          {
-            from: "bot",
-            text: "회원님께 추천드리는 지원사업입니다:",
-            subButtons: programs.map((p) => ({
-              title: p.title,
-              link: p.link,
-            })),
-          },
-          {
-            from: "bot",
-            text: "궁금하신 사업을 선택하시면, 상세 안내 도와드리겠습니다. 그 외 다른 사업이 궁금하시다면, 홈페이지를 참고해주세요.",
-          },          
+          { from: "bot", text: res.data.message || "로그인이 필요합니다." },
         ]);
-      } catch (err) {
-        // 예외 처리
-        setMessages((prev) => [
-          ...prev,
-          { from: "bot", text: "추천 정보를 불러오지 못했습니다." },
-        ]);
+        return;
       }
-    }
-    /* -------------------
-    6-2. 북구청지원사업안내
-    ------------------- */
-    /* -------------------
-    6-3. 광주광역시 지원사업 / 일반 지원사업
-    ------------------- */
-    /*광주광역시 지원사업 선택*/
-    if (label === "광주광역시 지원사업") {
-      setShowCategorySelect(true);
-      setSelectedCategories([]);
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: "bot",
-          text: "원하시는 지원사업 분야를 선택해주세요. (복수 선택 가능):",
-          categoryButtons: categories,
-        },
-      ]);
-      setSelectedRegion("광주");
-      return;
-    }
 
-    /*일반 지원사업 선택*/
-    if (label === "일반 지원사업") {
-      setShowCategorySelect(true);
-      setSelectedCategories([]);
+      // FastAPI 응답에서 program_list 추출
+      const programs = res?.data?.data?.program_list ?? [];
+
+      // 봇 메시지에 추천 사업 목록 추가(프로그램 리스트를 버튼으로 표시)
       setMessages((prev) => [
         ...prev,
         {
           from: "bot",
-          text: "전국 단위 지원사업 중 원하시는 분야를 선택해주세요. (복수 선택 가능):",
-          categoryButtons: categories,
+          text: "회원님께 추천드리는 지원사업입니다:",
+          subButtons: programs.map((p) => ({
+            title: p.title,
+            link: p.link,
+          })),
+        },
+        {
+          from: "bot",
+          text: "궁금하신 사업을 선택하시면 상세 안내 도와드리겠습니다.",
         },
       ]);
-      setSelectedRegion("전국");
-      return;
-    }
-    /* -------------------
-    6-3-1. 더보기 클릭 시
-    ------------------- */
-    if (label === "더보기") {
-      handleMoreClick();
-      return;
-    }
-    /* -------------------
-    6-3-2. 처음으로 클릭 시
-    ------------------- */
-    if (label === "처음으로") {
-      handleRestartClick();
-      return;
+    } catch (err) {
+      // 예외 처리
+      console.error("❌ 추천 API 오류:", err);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "추천 정보를 불러오지 못했습니다." },
+      ]);
     }
   };
+  /* -----------------------------------------------------
+  6-2. 북구청지원사업안내 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleBukguProgram = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        from: "bot",
+        text: 
+  `북구청에서는 소상공인을 위한 다양한 지원사업을 운영하고 있습니다:
 
+  • 연매출 기준 북구 일반 소상공인 카드수수료 지원사업
+  • 2025년 북구 소상공인 종합컨설팅 지원사업
+  • 2025 북구 라이브커머스 참여 소상공인 모집
+  • 온라인공고문(북소몰) 입점 소상공인 모집`,
+      },
+      {
+        from: "bot",
+        text: "자세한 내용은 아래 링크에서 확인하실 수 있습니다.",
+        subButtons: [
+          {
+            title: "북구청 소상공인 지원사업 페이지 바로가기",
+            link: "https://bukgu.go.kr/해당URL",   // 여기에 실제 URL 넣기
+          },
+        ],
+      },
+      {
+        from: "bot",
+        text: "다른 도움이 필요하시면 아래 메뉴를 이용해주세요.",
+      }
+    ]);
+    // 메뉴 다시 펼치기 (GUI 버튼 보이기)
+    setIsMenuOpen(true);  
+  };
+  /* -----------------------------------------------------
+  6-3. 광주광역시 지원사업 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleGwangjuProgram = () => {
+    setShowCategorySelect(true);
+    setSelectedCategories([]);
+    setSelectedRegion("광주");
+    setMessages((prev) => [
+      ...prev,
+      {
+        from: "bot",
+        text: "원하시는 지원사업 분야를 선택해주세요. (복수 선택 가능):",
+        categoryButtons: categories,
+      },
+    ]);
+  };
+  /* -----------------------------------------------------
+  6-4. 일반 지원사업 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleGeneralProgram = () => {
+    setShowCategorySelect(true);
+    setSelectedCategories([]);
+    setSelectedRegion("전국");
+    setMessages((prev) => [
+      ...prev,
+      {
+        from: "bot",
+        text: "전국 단위 지원사업 중 원하시는 분야를 선택해주세요. (복수 선택 가능):",
+        categoryButtons: categories,
+      },
+    ]);
+  };
+  /* -----------------------------------------------------
+  6-5. 더보기 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleMoreClick = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        from: "bot",
+        text: "추가로 추천드리는 지원사업입니다:",
+        subButtons: remainingPrograms.map((p) => ({
+          title: p.title,
+          link: p.link,
+        })),
+      },
+      {
+        from: "bot",
+        text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
+        subButtons: [
+          {
+            title: "북구청 소상공인 지원웹",
+            link: "https://bigdata.sbiz.or.kr",
+          },
+          {
+            title: "소상공인24",
+            link: "https://www.sbiz24.kr/",  
+          },
+        ],
+      },
+      {
+        from: "bot",
+        text: "처음으로 돌아가시겠어요?",
+        subButtons: ["처음으로"],
+      },
+    ]);
+  };
+  /* -----------------------------------------------------
+  6-5. 처음으로 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleRestartClick = () => {
+    // 메뉴 다시 펼치기 (GUI 버튼 보이기)
+    setIsMenuOpen(true);
+
+    // 챗봇 인사 멘트 다시 출력 (이전 대화는 유지)
+    setMessages((prev) => [
+      ...prev,
+      {
+        from: "bot",
+        text: `안녕하세요 고객님.
+          북구청 소상공인 지원 챗봇입니다.
+          궁금한 내용을 직접 입력하시거나
+          아래 버튼에서 선택해 주세요.`,
+      },
+    ]);
+  };
+  /* -----------------------------------------------------
+  6-6. 플랫폼 기능 안내 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  // ✅ 플랫폼 기능 안내 전용 핸들러
+  const handlePlatformGuide = async (label) => {
+    try {
+      const res = await axios.post(
+        "http://localhost:8080/api/chatbot/platform-guide",
+        { question: label, n_k: 5 } // ✅ 최대 5개까지 요청
+      );
+
+      const guideList = res?.data?.guide_list ?? [];
+
+      // // 🔍 디버깅 로그
+      // console.log("📦 플랫폼 기능 안내 응답 데이터:", res.data);
+      // console.log("📋 guide_list 내용:", guideList);
+      // console.log("📊 수신된 가이드 개수:", guideList.length);
+
+      if (guideList.length === 0) {
+        setMessages((prev) => [
+          ...prev,
+          { from: "bot", text: "해당 기능에 대한 안내 정보를 찾지 못했습니다." },
+        ]);
+        return;
+      }
+
+      // ✅ 기능 이름만 추출
+      const featureButtons = guideList.map((g) => g.feature_name);
+
+      // ✅ "어떤 기능이 궁금한지" 안내 메시지 추가
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text: "다음 중 어떤 기능에 대해 알고 싶으신가요?",
+          subButtons: featureButtons.map((f) => ({
+            title: f,
+            onClick: () => handleFeatureClick(f, guideList, setMessages), // ✅ 전달
+          })),
+        },
+      ]);
+    } catch (err) {
+      console.error("❌ 플랫폼 기능 안내 오류:", err);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "기능 안내 정보를 불러오지 못했습니다." },
+      ]);
+    }
+  };
+  /* -----------------------------------------------------
+  6-6. 플랫폼 기능 안내 하위 버튼 클릭 시 동작
+  ----------------------------------------------------- */
+  const handleFaqSearch = async (question) => {
+    try {
+      const res = await axios.post(
+        "http://localhost:8080/api/chatbot/faq-search",
+        { question, n_k: 3 }
+      );
+
+      const faqList = res.data.faq_list || [];
+      const bestQuestion = res.data.question || question;
+      const bestAnswer = res.data.answer || res.data.message || "";
+
+      // similarity 로그 출력
+      if (faqList.length > 0) {
+        console.group("🔍 FAQ 검색 similarity_score 로그");
+        faqList.forEach((item, index) => {
+          console.log(
+            `${index + 1}번 질문: ${item.question} | similarity_score: ${item.similarity_score}`
+          );
+        });
+        console.groupEnd();
+      }
+
+      // ✅ question + answer 함께 출력
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text: `${bestQuestion}:\n\n${bestAnswer}`,
+        },
+        {
+          from: "bot",
+          text: "그 외 다른 기능이 궁금하다면 저에게 물어보세요!",
+        },
+      ]);
+    } catch (err) {
+      console.error("❌ FAQ 검색 오류:", err);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "FAQ 정보를 불러오지 못했습니다." },
+      ]);
+    }
+    // 메뉴 다시 펼치기 (GUI 버튼 보이기)
+    setIsMenuOpen(true);
+  };
+
+
+  // ✅ 버튼 클릭 시 동작 정의
+  const handleFeatureClick = (featureName, guideList, setMessages) => {
+    const selectedGuide = guideList.find(
+      (g) => g.feature_name === featureName
+    );
+
+    if (!selectedGuide) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { from: "user", text: featureName },
+      {
+        from: "bot",
+        text: `${selectedGuide.description}`,
+      },
+      ...(selectedGuide.step_guide?.length
+        ? [
+            {
+              from: "bot",
+              text: "이용 방법 단계:",
+              subButtons: selectedGuide.step_guide,
+            },
+          ]
+        : []),
+      {
+        from: "bot",
+        text: "다른 기능도 안내해드릴까요?",
+      },
+    ]);
+
+    // 메뉴 다시 펼치기 (GUI 버튼 보이기)
+    setIsMenuOpen(true);
+  };  
   /* -----------------------------------------------------
   7. 광주광역시 지원사업 선택 / 일반 지원사업 하위버튼
      (카테고리 선택 / 제출)
@@ -330,7 +624,7 @@ export default function ChatPage() {
       );
       // ✅ 5️⃣ 응답에서 프로그램 목록 추출 (없으면 빈 배열로 처리)
       const programs = res?.data?.program_list ?? [];
-      console.log("📦 수신된 프로그램 개수:", programs.length, programs);
+      // console.log("📦 수신된 프로그램 개수:", programs.length, programs);
 
       // case 1️⃣: 응답된 프로그램이 0~3개 이하일 때 → 바로 전체 출력 + 안내 메시지 + 처음으로 버튼 표시
       if (programs.length <= 3) {
@@ -410,70 +704,20 @@ export default function ChatPage() {
   };
 
   /* -----------------------------------------------------
-  8. 더보기 / 처음으로 핸들러
-  ----------------------------------------------------- */
-  const handleMoreClick = () => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: "bot",
-        text: "추가로 추천드리는 지원사업입니다:",
-        subButtons: remainingPrograms.map((p) => ({
-          title: p.title,
-          link: p.link,
-        })),
-      },
-      {
-        from: "bot",
-        text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
-        subButtons: [
-          {
-            title: "북구청 소상공인 지원웹",
-            link: "https://bigdata.sbiz.or.kr",
-          },
-          {
-            title: "소상공인24",
-            link: "https://www.sbiz24.kr/",  
-          },
-        ],
-      },
-      {
-        from: "bot",
-        text: "처음으로 돌아가시겠어요?",
-        subButtons: ["처음으로"],
-      },
-    ]);
-  };
-
-  const handleRestartClick = () => {
-    // 메뉴 다시 펼치기
-    setIsMenuOpen(true);
-
-    // 챗봇 인사 멘트 다시 출력 (이전 대화는 유지)
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: "bot",
-        text: `안녕하세요 고객님.
-  북구청 소상공인 지원 챗봇입니다.
-  궁금한 내용을 직접 입력하시거나
-  아래 버튼에서 선택해 주세요.`,
-      },
-    ]);
-  };
-
-  /* -----------------------------------------------------
   7. "플랫폼 기능 안내" 하위 버튼(회원가입 및 로그인, 마이페이지 기능, 사업 검색 및 신청) 클릭 시 동작
   ----------------------------------------------------- */
-
-
   // ✅ 자동 스크롤
-  useEffect(() => {
+  // 메시지가 변할 때 (기본)
+  useLayoutEffect(() => {
     const chatBox = document.querySelector("#chatBox");
-    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-  }, [messages]);
+    if (!chatBox) return;
 
-  return (
+    requestAnimationFrame(() => {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  }, [messages, isMenuOpen]);
+
+  return (  
     <div style={styles.window}>
       {/* 상단바 */}
       <div style={styles.header}>
@@ -494,11 +738,7 @@ export default function ChatPage() {
 
       {/* 대화창 */}
       <div id="chatBox" 
-        style={{
-          ...styles.chatBox,
-          paddingBottom: isMenuOpen ? "170px" : "50px", // ✅ 버튼이 올라온 만큼 여백 확보
-          transition: "padding-bottom 0.3s ease"
-        }}
+        style={styles.chatBox}
       >
         {/* 대화 메시지 */}
         {messages.map((m, i) =>
@@ -509,7 +749,7 @@ export default function ChatPage() {
           ) : (
             <div key={i} style={styles.botMsgBox}>
               <div style={styles.botProfile}>🤖</div>
-              <div style={styles.botBubble}>
+              <div style={{ ...styles.botBubble, whiteSpace: "pre-line" }}>
                 {m.text}
 
                 {/* 🔹 일반 하위 버튼 (예: 지원사업 추천 등) */}
@@ -519,12 +759,20 @@ export default function ChatPage() {
                       <button
                         key={idx}
                         onClick={() => {
-                          if (typeof btn === "string") handleSubButton(btn);
-                          else window.open(btn.link, "_blank"); // 링크 이동
+                          if (btn.onClick) {
+                            // ✅ 플랫폼 기능 안내 버튼 (onClick 함수 직접 실행)
+                            btn.onClick();
+                          } else if (typeof btn === "string") {
+                            // ✅ 일반 챗봇용 하위 버튼
+                            handleSubButton(btn);
+                          } else if (btn.link) {
+                            // ✅ 외부 링크용 버튼
+                            window.open(btn.link, "_blank");
+                          }
                         }}
                         style={styles.subButton}
                       >
-                        {typeof btn === "string" ? btn : btn.title}
+                        {btn.title || btn} {/* 문자열이면 그대로, 객체면 title */}
                       </button>
                     ))}
                   </div>
@@ -578,7 +826,6 @@ export default function ChatPage() {
           ...styles.buttonBox,
           maxHeight: isMenuOpen ? "110px" : "15px",
           overflow: "hidden",
-          transition: "max-height 0.4s ease",
           position: "relative",
         }}
       >
@@ -606,7 +853,6 @@ export default function ChatPage() {
             justifyContent: "space-around",
             paddingTop: "18px",
             opacity: isMenuOpen ? 1 : 0,
-            transition: "opacity 0.3s ease",
           }}
         >
           <button
@@ -650,6 +896,13 @@ export default function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="메시지를 입력하세요"
           style={styles.input}
+          // ✅ Enter 키 입력 시 handleSend() 호출
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault(); // 줄바꿈 방지
+              handleSend(e);
+            }
+          }}
         />
         <button type="button" onClick={handleSend} style={styles.sendBtn}>
           ➤
@@ -698,7 +951,6 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "10px",
-    transition: "padding-bottom 0.3s ease",
   },
   botMsgBox: {
     display: "flex",
@@ -798,7 +1050,6 @@ const styles = {
     padding: "8px 16px",
     cursor: "pointer",
     fontSize: "13px",
-    transition: "0.2s",
   },
   submitBtn: {
     marginTop: "10px",
@@ -810,5 +1061,3 @@ const styles = {
     fontSize: "13px",
   },
 };
-
-
