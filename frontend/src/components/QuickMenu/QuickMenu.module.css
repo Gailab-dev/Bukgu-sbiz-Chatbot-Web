@@ -12,6 +12,8 @@
   background-color: #e0e6f9;
   position: relative;
   overflow: hidden;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
 }
 
 .buttonBox.open {
@@ -19,7 +21,7 @@
 }
 
 .buttonBox.closed {
-  max-height: 15px;
+  max-height: 30px;
 }
 
 .toggleHandle {

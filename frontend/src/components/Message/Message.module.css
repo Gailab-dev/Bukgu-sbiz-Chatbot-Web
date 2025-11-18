@@ -1,7 +1,11 @@
-/* :root{
-  --bg:#ffffff;
+/* :root, body{
+  --brand:#184375;
+  --panel:#ffffff;
   --border:#e5e5ec;
-  --text:#000000;
+  --text:#1f2328;
+  --muted:#8a8f98;
+  --login:#767676;
+  --textbox:#f7f7f8;
 } */
 
 .msg {  display: flex;  gap: 8px;  width: 100%; }
@@ -31,7 +35,56 @@
 .text { white-space: pre-wrap; word-break: break-word; }
 
 .user .time { margin-top: 4px; font-size: 12px; color: var(--muted); 
-  text-align: right;  opacity: .9;}
+  text-align: right;  opacity: .9; margin-right: 10px;}
   
 .bot .time { margin-top: 4px; font-size: 12px; color: var(--muted); 
-  text-align: left;  opacity: .9;}
+  text-align: left;  opacity: .9; margin-left: 10px;}
+
+.subButtonBox{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.subButton{
+  background-color: #f5f7fb;
+  border: 1px solid #cfd8dc;
+  border-radius: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
+.categoryBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.categoryBtn {
+  border: 1px solid #E5E5EC;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.submitBtn {
+  margin-top: 10px;
+  border: 1px solid #4160B6;
+  background-color: #fff;
+  color: #4160B6;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.submitBtn:hover{
+  background-color: #E9EFFF;
+  color: #4160B6;
+}

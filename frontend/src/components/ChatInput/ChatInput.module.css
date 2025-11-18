@@ -12,7 +12,7 @@
     }
 .inputbar_field{ 
     flex:1;
-    height:42px;
+    height:40px;
     padding:0 12px;
     border:1px solid var(--border); 
     border-radius:100px; 

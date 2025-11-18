@@ -25,7 +25,7 @@ export default function Message({
 
           {/* 일반 하위 버튼 (지원사업 추천, 더보기 등) */}
           {subButtons && (
-            <div style={inlineStyles.subButtonBox}>
+            <div className={styles.subButtonBox}>
               {subButtons.map((btn, idx) => (
                 <button
                   key={idx}
@@ -33,7 +33,7 @@ export default function Message({
                     if (typeof btn === "string") onSubButtonClick(btn);
                     else window.open(btn.link, "_blank");
                   }}
-                  style={inlineStyles.subButton}
+                  className={styles.subButton}
                 >
                   {typeof btn === "string" ? btn : btn.title}
                 </button>
@@ -43,84 +43,44 @@ export default function Message({
 
           {/* 카테고리 선택창 (광주광역시 지원사업 / 일반 지원사업) */}
           {categoryButtons && showCategorySelect && (
-            <div style={inlineStyles.categoryBox}>
+            <div className={styles.categoryBox}>
               {categoryButtons.map((cat, idx) => (
                 <button
                   key={idx}
                   onClick={() => toggleCategory(cat)}
+                  className={styles.categoryBtn}
                   style={{
-                    ...inlineStyles.categoryBtn,
                     backgroundColor: selectedCategories.includes(cat)
-                      ? "#1E88E5"
+                      ? "#4160B6"
                       : "#fff",
-                    color: selectedCategories.includes(cat) ? "#fff" : "#1E88E5",
+                    color: selectedCategories.includes(cat) ? "#fff" : "#333333",
                   }}
                 >
                   {cat}
                 </button>
               ))}
-
-              {/* 선택 완료 버튼 */}
-              <button
-                onClick={onCategorySubmit}
-                style={{
-                  ...inlineStyles.submitBtn,
-                  opacity: selectedCategories.length >= 1 ? 1 : 0.5,
-                  cursor:
-                    selectedCategories.length >= 1 ? "pointer" : "not-allowed",
-                }}
-                disabled={selectedCategories.length < 1}
-              >
-                선택 완료
-              </button>
             </div>
           )}
         </div>
+
+        {/* 선택 완료 버튼 */}
+        {categoryButtons && showCategorySelect && (
+          <button
+            onClick={onCategorySubmit}
+            className={styles.submitBtn}
+            style={{
+              opacity: selectedCategories.length >= 1 ? 1 : 0.5,
+              cursor:
+                selectedCategories.length >= 1 ? "pointer" : "not-allowed",
+            }}
+            disabled={selectedCategories.length < 1}
+          >
+          선택 완료
+          </button>
+        )}
         {time && <div className={styles.time}>{time}</div>}
       </div>
     </div>
   );
 }
 
-// 인라인 스타일 (버튼들용)
-const inlineStyles = {
-  subButtonBox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    marginTop: "10px",
-  },
-  subButton: {
-    backgroundColor: "#f5f7fb",
-    border: "1px solid #cfd8dc",
-    borderRadius: "12px",
-    padding: "6px 10px",
-    cursor: "pointer",
-    textAlign: "left",
-    fontSize: "13px",
-  },
-  categoryBox: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginTop: "10px",
-    justifyContent: "center",
-  },
-  categoryBtn: {
-    border: "1px solid #1E88E5",
-    borderRadius: "20px",
-    padding: "8px 16px",
-    cursor: "pointer",
-    fontSize: "13px",
-    transition: "0.2s",
-  },
-  submitBtn: {
-    marginTop: "10px",
-    backgroundColor: "#1E88E5",
-    color: "#fff",
-    border: "none",
-    borderRadius: "20px",
-    padding: "8px 16px",
-    fontSize: "13px",
-  },
-};

@@ -21,5 +21,8 @@ code {
   --border:#e5e5ec;
   --text:#1f2328;
   --muted:#8a8f98;
-  --login:#767676
+  --login:#767676;
+  --textbox:#f7f7f8;
+
+  font-size:14px;
 }

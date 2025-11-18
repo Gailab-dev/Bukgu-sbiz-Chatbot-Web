@@ -99,7 +99,7 @@ export default function ChatPage() {
 
     setMessages((prev) => [
       ...prev,
-      { from: "user", text: labelMap[type] || `[${type}] 선택` },
+      { from: "user", text: labelMap[type] || `[${type}] 선택`, time: getCurrentTime() },
     ]);
 
     if (type === "program") {
@@ -108,6 +108,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "지원사업 중 원하시는 것을 선택해주세요:",
+          time: getCurrentTime(),
           subButtons: [
             "지원사업 추천",
             "북구청 지원사업",
@@ -125,6 +126,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "플랫폼의 어떤 기능에 대해 알고 싶으신가요?",
+          time: getCurrentTime(),
           subButtons: [
             "회원가입 및 로그인",
             "마이페이지 기능",
@@ -134,6 +136,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "그 외 다른 기능이 궁금하다면 저에게 물어보세요!",
+          time: getCurrentTime(),
         },
       ]);
       return;
@@ -142,7 +145,7 @@ export default function ChatPage() {
     const res = await callService(type);
     setMessages((prev) => [
       ...prev,
-      { from: "bot", text: res.message || JSON.stringify(res) },
+      { from: "bot", text: res.message || JSON.stringify(res), time: getCurrentTime() },
     ]);
   };
 
@@ -150,7 +153,7 @@ export default function ChatPage() {
   6. "소상공인 지원사업" 하위 버튼 클릭 시 동작
   ----------------------------------------------------- */
   const handleSubButton = async (label) => {
-    setMessages((prev) => [...prev, { from: "user", text: `${label}` }]);
+    setMessages((prev) => [...prev, { from: "user", text: `${label}`, time: getCurrentTime() }]);
 
     /* 6-1. 지원사업 추천 */
     if (label === "지원사업 추천") {
@@ -164,7 +167,7 @@ export default function ChatPage() {
         if (!res.data.loggedIn) {
           setMessages((prev) => [
             ...prev,
-            { from: "bot", text: res.data.message },
+            { from: "bot", text: res.data.message, time: getCurrentTime() },
           ]);
           return;
         }
@@ -176,6 +179,7 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "회원님께 추천드리는 지원사업입니다:",
+            time: getCurrentTime(),
             subButtons: programs.map((p) => ({
               title: p.title,
               link: p.link,
@@ -184,12 +188,13 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "궁금하신 사업을 선택하시면, 상세 안내 도와드리겠습니다. 그 외 다른 사업이 궁금하시다면, 홈페이지를 참고해주세요.",
+            time: getCurrentTime(),
           },
         ]);
       } catch (err) {
         setMessages((prev) => [
           ...prev,
-          { from: "bot", text: "추천 정보를 불러오지 못했습니다." },
+          { from: "bot", text: "추천 정보를 불러오지 못했습니다.", time: getCurrentTime() },
         ]);
       }
     }
@@ -203,6 +208,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "원하시는 지원사업 분야를 선택해주세요. (복수 선택 가능):",
+          time: getCurrentTime(),
           categoryButtons: categories,
         },
       ]);
@@ -219,6 +225,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "전국 단위 지원사업 중 원하시는 분야를 선택해주세요. (복수 선택 가능):",
+          time: getCurrentTime(),
           categoryButtons: categories,
         },
       ]);
@@ -256,10 +263,11 @@ export default function ChatPage() {
 
     setMessages((prev) => [
       ...prev,
-      { from: "user", text: `선택 완료 (${selectedCategories.join(", ")})` },
+      { from: "user", text: `선택 완료 (${selectedCategories.join(", ")})`, time: getCurrentTime() },
       {
         from: "bot",
         text: `선택하신 분야: ${selectedCategories.join(", ")}\n관련 지원사업을 불러오는 중입니다...`,
+        time: getCurrentTime(),
       },
     ]);
 
@@ -286,10 +294,12 @@ export default function ChatPage() {
             {
               from: "bot",
               text: "현재 선택하신 분야에 해당하는 지원사업이 없습니다.",
+              time: getCurrentTime(),
             },
             {
               from: "bot",
               text: "다른 분야를 선택하시거나 처음으로 돌아가주세요.",
+              time: getCurrentTime(),
               subButtons: ["처음으로"],
             },
           ]);
@@ -301,6 +311,7 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "관심 분야에 맞는 지원사업 목록입니다:",
+            time: getCurrentTime(),
             subButtons: programs.map((p) => ({
               title: p.title,
               link: p.link,
@@ -309,6 +320,7 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
+            time: getCurrentTime(),
             subButtons: [
               {
                 title: "북구청 소상공인 지원웹",
@@ -323,6 +335,7 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "처음으로 돌아가시겠어요?",
+            time: getCurrentTime(),
             subButtons: ["처음으로"],
           },
         ]);
@@ -338,6 +351,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "관심 분야에 맞는 지원사업 목록입니다:",
+          time: getCurrentTime(),
           subButtons: firstThree.map((p) => ({
             title: p.title,
             link: p.link,
@@ -346,6 +360,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "궁금하신 사업을 선택하시면, 상세 안내 도와드리겠습니다.",
+          time: getCurrentTime(),
           subButtons: ["더보기", "처음으로"],
         },
       ]);
@@ -353,7 +368,7 @@ export default function ChatPage() {
       console.error("❌ 지원사업 API 호출 오류:", err);
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: "지원사업 정보를 불러오지 못했습니다." },
+        { from: "bot", text: "지원사업 정보를 불러오지 못했습니다.", time: getCurrentTime() },
       ]);
     }
   };
@@ -367,6 +382,7 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "추가로 추천드리는 지원사업입니다:",
+        time: getCurrentTime(),
         subButtons: remainingPrograms.map((p) => ({
           title: p.title,
           link: p.link,
@@ -375,6 +391,7 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
+        time: getCurrentTime(),
         subButtons: [
           {
             title: "북구청 소상공인 지원웹",
@@ -389,6 +406,7 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "처음으로 돌아가시겠어요?",
+        time: getCurrentTime(),
         subButtons: ["처음으로"],
       },
     ]);
@@ -401,6 +419,7 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "안녕하세요 고객님.\n북구청 소상공인 지원 챗봇입니다.\n궁금한 내용을 직접 입력하시거나\n아래 버튼에서 선택해 주세요.",
+        time: getCurrentTime(),
       },
     ]);
   };
