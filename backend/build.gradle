@@ -50,12 +50,15 @@ def npmCommand = isWindows ? 'npm.cmd' : 'npm'
 task installReact(type: Exec) {
     workingDir frontendDir
     commandLine npmCommand, 'install'
+    inputs.files("${frontendDir}/package.json", "${frontendDir}/package-lock.json")
+    outputs.dir "${frontendDir}/node_modules"
 }
 
 task buildReact(type: Exec) {
     workingDir frontendDir
     commandLine npmCommand, 'run', 'build'
 }
+buildReact.dependsOn installReact
 
 task cleanReactBuildOutput(type: Delete) {
     delete "${projectDir}/src/main/resources/static"

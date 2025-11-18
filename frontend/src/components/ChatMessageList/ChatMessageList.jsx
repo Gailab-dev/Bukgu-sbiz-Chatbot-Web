@@ -20,6 +20,7 @@ export default function ChatMessageList({
   }, [messages]);
 
   return (
+    // 대화창
     <div
       ref={chatBoxRef}
       id="chatBox"
@@ -29,6 +30,7 @@ export default function ChatMessageList({
         transition: "padding-bottom 0.3s ease",
       }}
     >
+      {/* 대화 내용 */}
       {messages.map((msg, idx) => (
         <Message
           key={idx}
