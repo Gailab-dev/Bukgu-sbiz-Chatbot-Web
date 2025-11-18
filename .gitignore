@@ -12,6 +12,9 @@ backend/build/
 backend/out/
 backend/*.log
 
+# React build 결과 (static) 제외
+backend/src/main/resources/static/
+
 # IDE & editor folders
 .idea/
 .vscode/
