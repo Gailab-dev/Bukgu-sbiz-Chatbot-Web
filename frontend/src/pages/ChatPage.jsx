@@ -1,61 +1,37 @@
-﻿import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { sendMessage, callService } from "../api/chatApi";
+import ChatHeader from "../components/ChatHeader/ChatHeader";
+import ChatMessageList from "../components/ChatMessageList/ChatMessageList";
+import QuickMenu from "../components/QuickMenu/QuickMenu";
+import ChatInput from "../components/ChatInput/ChatInput";
 
 export default function ChatPage() {
   /* -----------------------------------------------------
   1. 상태(State) 정의
   ----------------------------------------------------- */
-   // 사용자가 입력한 메세지
-  // input(문자열) : 사용자가 입력한 메시지 내용을 저장
-  //setInput()(함수) : 문자열 상태를 변경하는 함수 (React 자동 제공)
   const [input, setInput] = useState("");
-
-  // 봇 대화창에 표시되는 전체 메시지 목록
-  // messages(배열 (객체[])) : 대화창에 표시되는 메시지 목록을 저장
-  //setMessages()(함수) : 배열 상태를 변경하는 함수 (React 자동 제공)
-  //각 메시지는 {from: "user" | "bot", text: "..."} 형태로 저장
   const [messages, setMessages] = useState([
     {
       from: "bot",
-      text: `안녕하세요 고객님.
-        북구청 소상공인 지원 챗봇입니다.
-        궁금한 내용을 직접 입력하시거나
-        아래 버튼에서 선택해 주세요.`,
+      text: "안녕하세요 고객님.\n북구청 소상공인 지원 챗봇입니다.\n궁금한 내용을 직접 입력하시거나\n아래 버튼에서 선택해 주세요.",
+      time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
     },
   ]);
-
-  // 로그인된 사용자 이름 (세션에서 가져옴)
   const [username, setUsername] = useState(null);
-
-  // 사용자가 선택한 지원사업 카테고리(복수 선택 가능)
-  //selectedCategories(배열 (string[])) : 사용자가 선택한 지원사업 분야 목록을 저장
-  //setSelectedCategories()(함수) : 배열 상태를 변경하는 함수 (React 자동 제공)
   const [selectedCategories, setSelectedCategories] = useState([]);
-
-  // 카테고리 선택창(창업/경영/금융/기타) 표시 여부
-  //showCategorySelect(불리언) : 카테고리 선택창의 표시 여부를 나타냄(분야 선택 UI(창업·경영·금융·기타)를 표시할지 여부를 저장)
-  //setShowCategorySelect()(함수) : 불리언 상태를 변경하는 함수 (React 자동 제공)(위 UI 표시 여부를 제어하는 setter 함수)
   const [showCategorySelect, setShowCategorySelect] = useState(false);
-
-  // 사용자가 이미 본 지원사업 목록 (중복 추천 방지용)
-  //remainingPrograms(배열 (객체[])) : 사용자가 이미 확인한 지원사업 목록을 저장
-  //setRemainingPrograms()(함수) : 배열 상태를 변경하는 함수 (React 자동 제공)
   const [remainingPrograms, setRemainingPrograms] = useState([]);
-
-
-  // GUI 버튼 보이기/숨기기 상태 (하단 토글용)
   const [isMenuOpen, setIsMenuOpen] = useState(true);
-
-  // 선택된 지역(광주 / 전국)
-  // selectedRegion(문자열) : 사용자가 선택한 지원사업 지역 정보를 저장 ("광주" 또는 "전국")
-  // setSelectedRegion()(함수) : 지역 상태를 변경하는 함수 (React 자동 제공)
-  //기본값으로 "광주"로 설정
   const [selectedRegion, setSelectedRegion] = useState("광주");
 
-  // 선택된 지원사업 카테고리("금융", "내수", "경영", "전체")
-  // categories(배열 (string[])) : 지원사업 카테고리 목록을 저장
   const categories = ["금융", "내수", "경영", "전체"];
+
+  // 현재 시간 가져오기 (HH:MM 형식, 24시간)
+  const getCurrentTime = () => {
+    return new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
   /* -----------------------------------------------------
   2. 로그인 여부 세션 확인 (최초 1회)
   ----------------------------------------------------- */
@@ -74,35 +50,39 @@ export default function ChatPage() {
   ----------------------------------------------------- */
   const handleLoginButton = () => {
     if (!username) {
-      // 로그인 안 된 상태 → 로그인 페이지 새 창 열고 현재 창 닫기
       window.open("http://localhost:8080", "_blank");
       window.close();
     } else {
       alert("이미 로그인되어 있습니다.");
-    }  
+    }
   };
 
   /* -----------------------------------------------------
   4. 텍스트 입력(CUI) 후 전송 버튼 클릭 시 동작
   ----------------------------------------------------- */
   const handleSend = async (e) => {
-    setIsMenuOpen(false); // 대화 시작 시 메뉴 닫기
+    setIsMenuOpen(false);
     e.preventDefault();
-    if (!input.trim()) return; // 공백 방지
+    if (!input.trim()) return;
 
-    // 사용자 메시지 추가
-    setMessages((prev) => [...prev, { from: "user", text: input }]);
-    
-    // FastAPI에 의도분류 요청
-    const res = await sendMessage(input);
-    
-    // 봇 응답 메시지 추가
-    setMessages((prev) => [
-      ...prev,
-      { from: "bot", text: res.message || JSON.stringify(res) },
-    ]);
+    setMessages((prev) => [...prev, { from: "user", text: input, time: getCurrentTime() }]);
 
-    setInput(""); // 입력창 초기화
+    try {
+      const res = await sendMessage(input);
+
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: res.message || JSON.stringify(res), time: getCurrentTime() },
+      ]);
+    } catch (error) {
+      console.error("메시지 전송 실패:", error);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "죄송합니다. 서버와의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", time: getCurrentTime() },
+      ]);
+    }
+
+    setInput("");
   };
 
   /* -----------------------------------------------------
@@ -111,20 +91,17 @@ export default function ChatPage() {
   const handleClick = async (type, e) => {
     if (e) e.preventDefault();
 
-    // 버튼 라벨 매핑
     const labelMap = {
       program: "소상공인 지원사업",
       guide: "플랫폼 기능 안내",
       faq: "자주 묻는 질문",
     };
 
-    // 사용자 메시지 추가
     setMessages((prev) => [
       ...prev,
       { from: "user", text: labelMap[type] || `[${type}] 선택` },
     ]);
 
-    // "소상공인 지원사업" 클릭 시 하위 버튼 표시
     if (type === "program") {
       setMessages((prev) => [
         ...prev,
@@ -139,10 +116,9 @@ export default function ChatPage() {
           ],
         },
       ]);
-      return; // 함수의 조기 종료(밑의 네트워크 요청(FastAPI 통신)을 멈추고, UI 업데이트만 하라는 의미)
+      return;
     }
 
-    // "플랫폼 기능 안내" 클릭 시 하위 버튼 표시
     if (type === "guide") {
       setMessages((prev) => [
         ...prev,
@@ -150,9 +126,9 @@ export default function ChatPage() {
           from: "bot",
           text: "플랫폼의 어떤 기능에 대해 알고 싶으신가요?",
           subButtons: [
-            "회원가입 및 로그인", 
-            "마이페이지 기능", 
-            "사업 검색 및 신청"
+            "회원가입 및 로그인",
+            "마이페이지 기능",
+            "사업 검색 및 신청",
           ],
         },
         {
@@ -162,34 +138,29 @@ export default function ChatPage() {
       ]);
       return;
     }
-    // 🔹 기본 로직 (나머지 버튼은 FastAPI 호출)
+
     const res = await callService(type);
     setMessages((prev) => [
-        ...prev,
-        { from: "bot", text: res.message || JSON.stringify(res) },
+      ...prev,
+      { from: "bot", text: res.message || JSON.stringify(res) },
     ]);
   };
 
   /* -----------------------------------------------------
-  6. "소상공인 지원사업" 하위 버튼(지원사업 추천, 북구청 지원사업, 광주광역시 지원사업, 일반 지원사업) 클릭 시 동작
+  6. "소상공인 지원사업" 하위 버튼 클릭 시 동작
   ----------------------------------------------------- */
   const handleSubButton = async (label) => {
-    // 사용자 메시지에 사용자가 클릭한 버튼 이름 추가
     setMessages((prev) => [...prev, { from: "user", text: `${label}` }]);
 
-    /* -------------------
-    6-1. 플랫폼 내 북구청지원사업 추천
-    ------------------- */
+    /* 6-1. 지원사업 추천 */
     if (label === "지원사업 추천") {
       try {
-        // 백엔드(Spring Boot) 요청
         const res = await axios.post(
           "http://localhost:8080/api/chatbot/recommend-programs",
           {},
           { withCredentials: true }
         );
 
-        // 로그인 안 된 경우
         if (!res.data.loggedIn) {
           setMessages((prev) => [
             ...prev,
@@ -198,10 +169,8 @@ export default function ChatPage() {
           return;
         }
 
-        // FastAPI 응답에서 program_list 추출
         const programs = res?.data?.data?.program_list ?? [];
-        
-        // 봇 메시지에 추천 사업 목록 추가(프로그램 리스트를 버튼으로 표시)
+
         setMessages((prev) => [
           ...prev,
           {
@@ -215,23 +184,17 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "궁금하신 사업을 선택하시면, 상세 안내 도와드리겠습니다. 그 외 다른 사업이 궁금하시다면, 홈페이지를 참고해주세요.",
-          },          
+          },
         ]);
       } catch (err) {
-        // 예외 처리
         setMessages((prev) => [
           ...prev,
           { from: "bot", text: "추천 정보를 불러오지 못했습니다." },
         ]);
       }
     }
-    /* -------------------
-    6-2. 북구청지원사업안내
-    ------------------- */
-    /* -------------------
-    6-3. 광주광역시 지원사업 / 일반 지원사업
-    ------------------- */
-    /*광주광역시 지원사업 선택*/
+
+    /* 6-2. 광주광역시 지원사업 */
     if (label === "광주광역시 지원사업") {
       setShowCategorySelect(true);
       setSelectedCategories([]);
@@ -247,7 +210,7 @@ export default function ChatPage() {
       return;
     }
 
-    /*일반 지원사업 선택*/
+    /* 6-3. 일반 지원사업 */
     if (label === "일반 지원사업") {
       setShowCategorySelect(true);
       setSelectedCategories([]);
@@ -262,16 +225,14 @@ export default function ChatPage() {
       setSelectedRegion("전국");
       return;
     }
-    /* -------------------
-    6-3-1. 더보기 클릭 시
-    ------------------- */
+
+    /* 6-4. 더보기 */
     if (label === "더보기") {
       handleMoreClick();
       return;
     }
-    /* -------------------
-    6-3-2. 처음으로 클릭 시
-    ------------------- */
+
+    /* 6-5. 처음으로 */
     if (label === "처음으로") {
       handleRestartClick();
       return;
@@ -279,31 +240,20 @@ export default function ChatPage() {
   };
 
   /* -----------------------------------------------------
-  7. 광주광역시 지원사업 선택 / 일반 지원사업 하위버튼
-     (카테고리 선택 / 제출)
+  7. 카테고리 선택 및 제출
   ----------------------------------------------------- */
-  /* 광주광역시 지원사업 / 일반 지원사업 카테고리("금융", "내수", "경영", "전체") 버튼을 클릭할 때 
-    선택/해제 상태를 토글(전환) 하는 역할 */
-  /* 카테고리 다중 선택 버튼"의 상태를 관리하는 함수 */
   const toggleCategory = (cat) => {
     setSelectedCategories((prev) =>
-      prev.includes(cat)
-        ? prev.filter((c) => c !== cat)
-        : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
   };
-  /*카테고리 선택 후 '선택 완료' 버튼 클릭 시 실행되는 함수*/ 
-  /* 선택된 카테고리(selectedCategories)를 기준으로 FastAPI(Spring Boot → FastAPI)에서 
-    관련 지원사업 목록을 요청하고, 결과를 챗봇 메시지 형태로 화면에 출력한다.*/
+
   const handleCategorySubmit = async () => {
-    // ✅ 1️⃣ 최소 1개 이상 선택해야만 요청 가능
     if (selectedCategories.length < 1) {
       alert("최소 1개 이상 선택해주세요!");
       return;
     }
-    // ✅ 2️⃣ 사용자의 선택 결과를 대화창에 표시
-    //    - "선택 완료 (금융, 경영)" 형태로 사용자 메시지 출력
-    //    - "관련 지원사업을 불러오는 중입니다..." 안내 메시지 출력
+
     setMessages((prev) => [
       ...prev,
       { from: "user", text: `선택 완료 (${selectedCategories.join(", ")})` },
@@ -312,38 +262,40 @@ export default function ChatPage() {
         text: `선택하신 분야: ${selectedCategories.join(", ")}\n관련 지원사업을 불러오는 중입니다...`,
       },
     ]);
-    // ✅ 3️⃣ 선택 UI(카테고리 버튼들) 숨기기
+
     setShowCategorySelect(false);
 
     try {
-      // ✅ 4️⃣ FastAPI로 지원사업 요청
-      //    - 선택된 지역(selectedRegion)과 카테고리 배열(selectedCategories) 전달
-      //    - 최대 9개의 데이터를 요청하도록 설정 (n_k = 9)
       const res = await axios.post(
         "http://localhost:8080/api/chatbot/program-info",
         {
-          region: selectedRegion, // 선택된 지역 (광주 or 전국)
-          n_k: 9, // 최대 9개까지 요청
-          category: selectedCategories, // 배열(ex) ["금융", "경영"])로 전달
+          region: selectedRegion,
+          n_k: 9,
+          category: selectedCategories,
         },
-        { withCredentials: true } // 세션 쿠키 포함 (로그인 세션 유지용)
+        { withCredentials: true }
       );
-      // ✅ 5️⃣ 응답에서 프로그램 목록 추출 (없으면 빈 배열로 처리)
+
       const programs = res?.data?.program_list ?? [];
       console.log("📦 수신된 프로그램 개수:", programs.length, programs);
 
-      // case 1️⃣: 응답된 프로그램이 0~3개 이하일 때 → 바로 전체 출력 + 안내 메시지 + 처음으로 버튼 표시
       if (programs.length <= 3) {
-        // 결과가 0개인 경우 (검색 결과 없음)
         if (programs.length === 0) {
           setMessages((prev) => [
             ...prev,
-            { from: "bot", text: "현재 선택하신 분야에 해당하는 지원사업이 없습니다." },
-            { from: "bot", text: "다른 분야를 선택하시거나 처음으로 돌아가주세요.", subButtons: ["처음으로"] },
+            {
+              from: "bot",
+              text: "현재 선택하신 분야에 해당하는 지원사업이 없습니다.",
+            },
+            {
+              from: "bot",
+              text: "다른 분야를 선택하시거나 처음으로 돌아가주세요.",
+              subButtons: ["처음으로"],
+            },
           ]);
           return;
         }
-        // 결과가 1~3개인 경우 → 모두 바로 표시
+
         setMessages((prev) => [
           ...prev,
           {
@@ -377,11 +329,10 @@ export default function ChatPage() {
         return;
       }
 
-      // case 2️⃣: 응답된 프로그램이 4~9개일 때 → 처음 3개만 표시 + "더보기" 버튼 표시
       const firstThree = programs.slice(0, 3);
       const remaining = programs.slice(3);
       setRemainingPrograms(remaining);
-      // 챗봇 메시지 업데이트
+
       setMessages((prev) => [
         ...prev,
         {
@@ -398,9 +349,7 @@ export default function ChatPage() {
           subButtons: ["더보기", "처음으로"],
         },
       ]);
-
     } catch (err) {
-      // ✅ 6️⃣ FastAPI 통신 실패 시 예외 처리
       console.error("❌ 지원사업 API 호출 오류:", err);
       setMessages((prev) => [
         ...prev,
@@ -433,7 +382,7 @@ export default function ChatPage() {
           },
           {
             title: "소상공인24",
-            link: "https://www.sbiz24.kr/",  
+            link: "https://www.sbiz24.kr/",
           },
         ],
       },
@@ -446,215 +395,44 @@ export default function ChatPage() {
   };
 
   const handleRestartClick = () => {
-    // 메뉴 다시 펼치기
     setIsMenuOpen(true);
-
-    // 챗봇 인사 멘트 다시 출력 (이전 대화는 유지)
     setMessages((prev) => [
       ...prev,
       {
         from: "bot",
-        text: `안녕하세요 고객님.
-  북구청 소상공인 지원 챗봇입니다.
-  궁금한 내용을 직접 입력하시거나
-  아래 버튼에서 선택해 주세요.`,
+        text: "안녕하세요 고객님.\n북구청 소상공인 지원 챗봇입니다.\n궁금한 내용을 직접 입력하시거나\n아래 버튼에서 선택해 주세요.",
       },
     ]);
   };
 
-  /* -----------------------------------------------------
-  7. "플랫폼 기능 안내" 하위 버튼(회원가입 및 로그인, 마이페이지 기능, 사업 검색 및 신청) 클릭 시 동작
-  ----------------------------------------------------- */
-
-
-  // ✅ 자동 스크롤
-  useEffect(() => {
-    const chatBox = document.querySelector("#chatBox");
-    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-  }, [messages]);
-
   return (
     <div style={styles.window}>
-      {/* 상단바 */}
-      <div style={styles.header}>
-        <div>
-          <h3 style={styles.title}>소상공인 지원 챗봇</h3>
-        </div>
-        <button
-          style={{
-            ...styles.loginBtn,
-            cursor: username ? "not-allowed" : "pointer",
-          }}
-          onClick={handleLoginButton}
-          disabled={!!username} // 로그인 상태면 비활성화
-        >
-          {username ? `${username}님` : "로그인"}
-        </button>
-      </div>
+      <ChatHeader username={username} onLoginClick={handleLoginButton} />
 
-      {/* 대화창 */}
-      <div id="chatBox" 
-        style={{
-          ...styles.chatBox,
-          paddingBottom: isMenuOpen ? "170px" : "50px", // ✅ 버튼이 올라온 만큼 여백 확보
-          transition: "padding-bottom 0.3s ease"
+      <ChatMessageList
+        messages={messages}
+        onSubButtonClick={handleSubButton}
+        toggleCategory={toggleCategory}
+        selectedCategories={selectedCategories}
+        showCategorySelect={showCategorySelect}
+        onCategorySubmit={handleCategorySubmit}
+        isMenuOpen={isMenuOpen}
+      />
+
+      <QuickMenu
+        isOpen={isMenuOpen}
+        onToggle={() => setIsMenuOpen(!isMenuOpen)}
+        onMenuClick={(type, e) => {
+          handleClick(type, e);
+          setIsMenuOpen(false);
         }}
-      >
-        {/* 대화 메시지 */}
-        {messages.map((m, i) =>
-          m.from === "user" ? (
-            <div key={i} style={styles.userMsgBox}>
-              <div style={styles.userBubble}>{m.text}</div>
-            </div>
-          ) : (
-            <div key={i} style={styles.botMsgBox}>
-              <div style={styles.botProfile}>🤖</div>
-              <div style={styles.botBubble}>
-                {m.text}
+      />
 
-                {/* 🔹 일반 하위 버튼 (예: 지원사업 추천 등) */}
-                {m.subButtons && (
-                  <div style={styles.subButtonBox}>
-                    {m.subButtons.map((btn, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          if (typeof btn === "string") handleSubButton(btn);
-                          else window.open(btn.link, "_blank"); // 링크 이동
-                        }}
-                        style={styles.subButton}
-                      >
-                        {typeof btn === "string" ? btn : btn.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* 🔹 ✅ 카테고리 선택창 (광주광역시 지원사업일 때 표시) */}
-                {m.categoryButtons && showCategorySelect && (
-                  <div style={styles.categoryBox}>
-                    {m.categoryButtons.map((cat, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => toggleCategory(cat)}
-                        style={{
-                          ...styles.categoryBtn,
-                          backgroundColor: selectedCategories.includes(cat)
-                            ? "#1E88E5"
-                            : "#fff",
-                          color: selectedCategories.includes(cat)
-                            ? "#fff"
-                            : "#1E88E5",
-                        }}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-
-                    {/* ✅ 선택 완료 버튼 (최소 1개 이상 선택해야 활성화) */}
-                    <button
-                      onClick={handleCategorySubmit}
-                      style={{
-                        ...styles.submitBtn,
-                        opacity: selectedCategories.length >= 1 ? 1 : 0.5,
-                        cursor:
-                          selectedCategories.length >= 1 ? "pointer" : "not-allowed",
-                      }}
-                      disabled={selectedCategories.length < 1}
-                    >
-                      선택 완료
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        )}
-      </div>
-
-      {/* GUI 버튼 (슬라이드 토글 가능) */}
-      <div
-        style={{
-          ...styles.buttonBox,
-          maxHeight: isMenuOpen ? "110px" : "15px",
-          overflow: "hidden",
-          transition: "max-height 0.4s ease",
-          position: "relative",
-        }}
-      >
-        {/* 🔹 상단 토글 핸들 (흰색 바) */}
-        <div
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          style={{
-            width: "60px",
-            height: "5px",
-            backgroundColor: "#fff",
-            borderRadius: "3px",
-            position: "absolute",
-            top: "6px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            cursor: "pointer",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-          }}
-        ></div>
-
-        {/* 버튼 리스트 */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-around",
-            paddingTop: "18px",
-            opacity: isMenuOpen ? 1 : 0,
-            transition: "opacity 0.3s ease",
-          }}
-        >
-          <button
-            type="button"
-            onClick={(e) => {
-              handleClick("program", e);
-              setIsMenuOpen(false);
-            }}
-            style={styles.menuBtn}
-          >
-            소상공인 지원사업
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              handleClick("guide", e);
-              setIsMenuOpen(false);
-            }}
-            style={styles.menuBtn}
-          >
-            플랫폼 기능 안내
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              handleClick("faq", e);
-              setIsMenuOpen(false);
-            }}
-            style={styles.menuBtn}
-          >
-            자주 묻는 질문
-          </button>
-        </div>
-      </div>
-
-      {/* 입력창 */}
-      <div style={styles.inputBox}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="메시지를 입력하세요"
-          style={styles.input}
-        />
-        <button type="button" onClick={handleSend} style={styles.sendBtn}>
-          ➤
-        </button>
-      </div>
+      <ChatInput
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onSend={handleSend}
+      />
     </div>
   );
 }
@@ -663,152 +441,10 @@ const styles = {
   window: {
     width: "420px",
     height: "700px",
-    border: "1px solid #ccc",
-    borderRadius: "10px",
+    border: "1px solid #E5E5EC",
     margin: "40px auto",
     display: "flex",
     flexDirection: "column",
     backgroundColor: "#fff",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-  },
-  header: {
-    backgroundColor: "#1E88E5",
-    color: "white",
-    padding: "10px 15px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopLeftRadius: "10px",
-    borderTopRightRadius: "10px",
-  },
-  title: { margin: 0, fontSize: "16px" },
-  loginBtn: {
-    backgroundColor: "white",
-    color: "#1E88E5",
-    border: "none",
-    borderRadius: "6px",
-    padding: "5px 10px",
-    cursor: "pointer",
-  },
-  chatBox: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "15px",
-    backgroundColor: "#f7f9fc",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    transition: "padding-bottom 0.3s ease",
-  },
-  botMsgBox: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "8px",
-  },
-  botProfile: {
-    fontSize: "22px",
-    lineHeight: "30px",
-  },
-  botBubble: {
-    backgroundColor: "#fff",
-    padding: "10px 15px",
-    borderRadius: "15px",
-    border: "1px solid #ddd",
-    maxWidth: "75%",
-  },
-  userMsgBox: {
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  userBubble: {
-    backgroundColor: "#007bff",
-    color: "#fff",
-    padding: "10px 15px",
-    borderRadius: "15px",
-    maxWidth: "75%",
-  },
-  buttonBox: {
-    display: "flex",
-    justifyContent: "space-around",
-    padding: "10px",
-    borderTop: "1px solid #ddd",
-    backgroundColor: "#fff",
-  },
-  menuBtn: {
-    flex: 1,
-    margin: "0 4px",
-    backgroundColor: "#E3F2FD",
-    border: "1px solid #90CAF9",
-    borderRadius: "10px",
-    padding: "8px",
-    cursor: "pointer",
-    fontSize: "13px",
-    color: "#1976D2",
-    fontWeight: "bold",
-  },
-  inputBox: {
-    display: "flex",
-    borderTop: "1px solid #ddd",
-    padding: "8px",
-    backgroundColor: "#fff",
-  },
-  input: {
-    flex: 1,
-    padding: "10px",
-    borderRadius: "20px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-  },
-  sendBtn: {
-    marginLeft: "8px",
-    backgroundColor: "#1E88E5",
-    color: "white",
-    border: "none",
-    borderRadius: "50%",
-    width: "40px",
-    height: "40px",
-    fontSize: "18px",
-    cursor: "pointer",
-  },
-  subButtonBox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    marginTop: "10px",
-  },
-  subButton: {
-    backgroundColor: "#f5f7fb",
-    border: "1px solid #cfd8dc",
-    borderRadius: "12px",
-    padding: "6px 10px",
-    cursor: "pointer",
-    textAlign: "left",
-    fontSize: "13px",
-  },
-  categoryBox: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginTop: "10px",
-    justifyContent: "center",
-  },
-  categoryBtn: {
-    border: "1px solid #1E88E5",
-    borderRadius: "20px",
-    padding: "8px 16px",
-    cursor: "pointer",
-    fontSize: "13px",
-    transition: "0.2s",
-  },
-  submitBtn: {
-    marginTop: "10px",
-    backgroundColor: "#1E88E5",
-    color: "#fff",
-    border: "none",
-    borderRadius: "20px",
-    padding: "8px 16px",
-    fontSize: "13px",
   },
 };
-
-

@@ -1,0 +1,37 @@
+/* :root{
+  --bg:#ffffff;
+  --border:#e5e5ec;
+  --text:#000000;
+} */
+
+.msg {  display: flex;  gap: 8px;  width: 100%; }
+
+/* 역할별 정렬 (컨테이너에 붙음) */
+.user { justify-content: flex-end; }  
+.bot  { justify-content: flex-start; }
+
+
+.avatar {  width: 28px; height: 28px;border-radius: 50%; flex: 0 0 auto;}
+
+.bubble {
+  max-width: min(85vw, 420px);
+  background: #eef1f6;
+  border-radius: 16px;
+  padding: 16px;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+
+.bot .bubble {  background: #ffffff;  border: 1px solid #e5e5ec;  color: #000;}
+
+.user .bubble { background: #333; border: 1px solid #000000; color: #fff;}
+
+.text { white-space: pre-wrap; word-break: break-word; }
+
+.user .time { margin-top: 4px; font-size: 12px; color: var(--muted); 
+  text-align: right;  opacity: .9;}
+  
+.bot .time { margin-top: 4px; font-size: 12px; color: var(--muted); 
+  text-align: left;  opacity: .9;}

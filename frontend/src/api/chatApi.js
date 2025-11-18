@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8080/api/chat";
+const BASE_URL = "/api/chat";
 
 // ??CUI 입력
 export async function sendMessage(text) {
