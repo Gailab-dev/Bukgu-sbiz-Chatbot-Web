@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import Message from "../Message/Message";
+import styles from "./ChatMessageList.module.css";
 
 export default function ChatMessageList({
   messages,
@@ -24,10 +25,9 @@ export default function ChatMessageList({
     <div
       ref={chatBoxRef}
       id="chatBox"
+      className={styles.chatBox}
       style={{
-        ...styles.chatBox,
         paddingBottom: isMenuOpen ? "170px" : "50px",
-        transition: "padding-bottom 0.3s ease",
       }}
     >
       {/* 대화 내용 */}
@@ -45,15 +45,3 @@ export default function ChatMessageList({
     </div>
   );
 }
-
-const styles = {
-  chatBox: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "15px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    transition: "padding-bottom 0.3s ease",
-  },
-};

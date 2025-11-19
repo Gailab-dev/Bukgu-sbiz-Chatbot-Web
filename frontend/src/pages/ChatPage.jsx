@@ -795,9 +795,9 @@ export default function ChatPage() {
 const styles = {
   window: {
     width: "420px",
-    height: "700px",
+    height: "650px",
     border: "1px solid #E5E5EC",
-    margin: "40px auto",
+    margin: "20px auto",
     display: "flex",
     flexDirection: "column",
     backgroundColor: "#fff",
