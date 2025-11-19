@@ -31,17 +31,24 @@ export default function ChatMessageList({
       }}
     >
       {/* 대화 내용 */}
-      {messages.map((msg, idx) => (
-        <Message
-          key={idx}
-          message={msg}
-          onSubButtonClick={onSubButtonClick}
-          toggleCategory={toggleCategory}
-          selectedCategories={selectedCategories}
-          showCategorySelect={showCategorySelect}
-          onCategorySubmit={onCategorySubmit}
-        />
-      ))}
+      {messages.map((msg, idx) => {
+        // 이전 메시지가 봇 메시지인지 확인
+        const prevMsg = idx > 0 ? messages[idx - 1] : null;
+        const showAvatar = msg.from === "bot" && (!prevMsg || prevMsg.from !== "bot");
+
+        return (
+          <Message
+            key={idx}
+            message={msg}
+            showAvatar={showAvatar}
+            onSubButtonClick={onSubButtonClick}
+            toggleCategory={toggleCategory}
+            selectedCategories={selectedCategories}
+            showCategorySelect={showCategorySelect}
+            onCategorySubmit={onCategorySubmit}
+          />
+        );
+      })}
     </div>
   );
 }

@@ -222,7 +222,6 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "플랫폼의 어떤 기능에 대해 알고 싶으신가요?",
-          time: getCurrentTime(),
           subButtons: [
             "회원가입 및 로그인",
             "마이페이지 기능",
@@ -254,6 +253,7 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "그 외 다른 기능이 궁금하다면 저에게 물어보세요!",
+          time: getCurrentTime(),
         },
       ]);
       return; // 함수의 조기 종료(밑의 네트워크 요청(FastAPI 통신)을 멈추고, UI 업데이트만 하라는 의미)
@@ -320,7 +320,6 @@ export default function ChatPage() {
         {
           from: "bot",
           text: "회원님께 추천드리는 지원사업입니다:",
-          time: getCurrentTime(),
           subButtons: programs.map((p) => ({
             title: p.title,
             link: p.link,
@@ -360,12 +359,10 @@ export default function ChatPage() {
           • 2025년 북구 소상공인 종합컨설팅 지원사업
           • 2025 북구 라이브커머스 참여 소상공인 모집
           • 온라인공고문(북소몰) 입점 소상공인 모집`,
-        time: getCurrentTime(),
       },
       {
         from: "bot",
         text: "자세한 내용은 아래 링크에서 확인하실 수 있습니다.",
-        time: getCurrentTime(),
         subButtons: [
           {
             title: "북구청 소상공인 지원사업 페이지 바로가기",
@@ -394,7 +391,7 @@ export default function ChatPage() {
       ...prev,
       {
         from: "bot",
-        text: "원하시는 지원사업 분야를 선택해주세요. (복수 선택 가능):",
+        text: "원하시는 지원사업 분야를 선택해주세요 : \n(복수 선택 가능)",
         time: getCurrentTime(),  
         categoryButtons: categories,
       },
@@ -434,7 +431,7 @@ export default function ChatPage() {
       { from: "user", text: `선택 완료 (${selectedCategories.join(", ")})` },
       {
         from: "bot",
-        text: `선택하신 분야: ${selectedCategories.join(", ")}\n관련 지원사업을 불러오는 중입니다...`,
+        isTyping: true, // 타이핑 애니메이션 표시
         time: getCurrentTime(),
       },
     ]);
@@ -462,46 +459,47 @@ export default function ChatPage() {
       if (programs.length <= 3) {
         // 결과가 0개인 경우 (검색 결과 없음)
         if (programs.length === 0) {
-          setMessages((prev) => [
-            ...prev,
-            { from: "bot", text: "현재 선택하신 분야에 해당하는 지원사업이 없습니다.",time: getCurrentTime() },
-            { from: "bot", text: "다른 분야를 선택하시거나 처음으로 돌아가주세요.", subButtons: ["처음으로"], time: getCurrentTime() },
-          ]);
+          setMessages((prev) =>
+            prev.filter((msg) => !msg.isTyping).concat([
+              { from: "bot", text: "현재 선택하신 분야에 해당하는 지원사업이 없습니다.",time: getCurrentTime() },
+              { from: "bot", text: "다른 분야를 선택하시거나 처음으로 돌아가주세요.", subButtons: ["처음으로"], time: getCurrentTime() },
+            ])
+          );
           return;
         }
         // 결과가 1~3개인 경우 → 모두 바로 표시
-        setMessages((prev) => [
-          ...prev,
-          {
-            from: "bot",
-            text: "관심 분야에 맞는 지원사업 목록입니다:",
-            time: getCurrentTime(),
-            subButtons: programs.map((p) => ({
-              title: p.title,
-              link: p.link,
-            })),
-          },
-          {
-            from: "bot",
-            text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
-            time: getCurrentTime(),
-            subButtons: [
-              {
-                title: "북구청 소상공인 지원웹",
-                link: "https://bigdata.sbiz.or.kr",
-              },
-              {
-                title: "소상공인24",
-                link: "https://www.sbiz24.kr/",
-              },
-            ],
-          },
-          {
-            from: "bot",
-            time: getCurrentTime(),
-            subButtons: ["처음으로"],
-          },
-        ]);
+        setMessages((prev) =>
+          prev.filter((msg) => !msg.isTyping).concat([
+            {
+              from: "bot",
+              text: "관심 분야에 맞는 지원사업 목록입니다:",
+              subButtons: programs.map((p) => ({
+                title: p.title,
+                link: p.link,
+              })),
+            },
+            {
+              from: "bot",
+              text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
+              subButtons: [
+                {
+                  title: "북구청 소상공인 지원웹",
+                  link: "https://bigdata.sbiz.or.kr",
+                },
+                {
+                  title: "소상공인24",
+                  link: "https://www.sbiz24.kr/",
+                },
+              ],
+            },
+            {
+              from: "bot",
+              subButtons: ["처음으로"],
+              time: getCurrentTime(),
+              
+            },
+          ])
+        );
         return;
       }
 
@@ -510,23 +508,23 @@ export default function ChatPage() {
       const remaining = programs.slice(3);
       setRemainingPrograms(remaining);
       // 챗봇 메시지 업데이트
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: "bot",
-          text: "관심 분야에 맞는 지원사업 목록입니다:",
-          time: getCurrentTime(),
-          subButtons: firstThree.map((p) => ({
-            title: p.title,
-            link: p.link,
-          })),
-        },
-        {
-          from: "bot",
-          time: getCurrentTime(),
-          subButtons: ["더보기", "처음으로"],
-        },
-      ]);
+      setMessages((prev) =>
+        prev.filter((msg) => !msg.isTyping).concat([
+          {
+            from: "bot",
+            text: "관심 분야에 맞는 지원사업 목록입니다:",
+            time: getCurrentTime(),
+            subButtons: firstThree.map((p) => ({
+              title: p.title,
+              link: p.link,
+            })),
+          },
+          {
+            from: "bot",
+            subButtons: ["더보기", "처음으로"],
+          },
+        ])
+      );
 
     } catch (err) {
       // ✅ 6️⃣ FastAPI 통신 실패 시 예외 처리
@@ -570,7 +568,6 @@ export default function ChatPage() {
       },
       {
         from: "bot",
-        time: getCurrentTime(),
         subButtons: ["처음으로"],
       },
     ]);
@@ -588,10 +585,7 @@ export default function ChatPage() {
       ...prev,
       {
         from: "bot",
-        text: `안녕하세요 고객님.
-          북구청 소상공인 지원 챗봇입니다.
-          궁금한 내용을 직접 입력하시거나
-          아래 버튼에서 선택해 주세요.`,
+        text: `안녕하세요 고객님.북구청 소상공인 지원 챗봇입니다.궁금한 내용을 직접 입력하시거나아래 버튼에서 선택해 주세요.`,
         time: getCurrentTime(),
       },
     ]);
