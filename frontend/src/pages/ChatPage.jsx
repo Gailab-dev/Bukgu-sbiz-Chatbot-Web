@@ -13,7 +13,7 @@ export default function ChatPage() {
   // 사용자가 입력한 메세지
   // input(문자열) : 사용자가 입력한 메시지 내용을 저장
   // setInput()(함수) : 문자열 상태를 변경하는 함수 (React 자동 제공)
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(""); 
 
   // 봇 대화창에 표시되는 전체 메시지 목록창 및 초기 상태 메세지
   // messages(배열 (객체[])) : 대화창에 표시되는 메시지 목록을 저장
@@ -22,7 +22,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([
     {
       from: "bot",
-      text: "안녕하세요 고객님.\n북구청 소상공인 지원 챗봇입니다.\n궁금한 내용을 직접 입력하시거나\n아래 버튼에서 선택해 주세요.",
+      text: "안녕하세요 고객님.\n북구청 소상공인 지원 챗봇입니다.\n궁금한 내용을 직접 입력하시거나 아래 버튼에서 선택해 주세요.",
       time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
     },
   ]);
@@ -353,12 +353,7 @@ export default function ChatPage() {
       {
         from: "bot",
         text: 
-          `북구청에서는 소상공인을 위한 다양한 지원사업을 운영하고 있습니다:
-
-          • 연매출 기준 북구 일반 소상공인 카드수수료 지원사업
-          • 2025년 북구 소상공인 종합컨설팅 지원사업
-          • 2025 북구 라이브커머스 참여 소상공인 모집
-          • 온라인공고문(북소몰) 입점 소상공인 모집`,
+          `북구청에서는 소상공인을 위한 다양한 지원사업을 운영하고 있습니다:\n • 연매출 기준 북구 일반 소상공인 카드수수료 지원사업\n • 2025년 북구 소상공인 종합컨설팅 지원사업\n • 2025 북구 라이브커머스 참여 소상공인 모집\n • 온라인공고문(북소몰) 입점 소상공인 모집`,
       },
       {
         from: "bot",
@@ -391,9 +386,9 @@ export default function ChatPage() {
       ...prev,
       {
         from: "bot",
-        text: "원하시는 지원사업 분야를 선택해주세요 : \n(복수 선택 가능)",
-        time: getCurrentTime(),  
+        text: "원하시는 지원사업 분야를 선택해주세요 : \n(복수 선택 가능)",  
         categoryButtons: categories,
+        time: getCurrentTime(),
       },
     ]);
   };
@@ -496,7 +491,6 @@ export default function ChatPage() {
               from: "bot",
               subButtons: ["처음으로"],
               time: getCurrentTime(),
-              
             },
           ])
         );
@@ -513,7 +507,7 @@ export default function ChatPage() {
           {
             from: "bot",
             text: "관심 분야에 맞는 지원사업 목록입니다:",
-            time: getCurrentTime(),
+            
             subButtons: firstThree.map((p) => ({
               title: p.title,
               link: p.link,
@@ -522,6 +516,7 @@ export default function ChatPage() {
           {
             from: "bot",
             subButtons: ["더보기", "처음으로"],
+            time: getCurrentTime(),
           },
         ])
       );
@@ -545,7 +540,6 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "추가로 추천드리는 지원사업입니다:",
-        time: getCurrentTime(),
         subButtons: remainingPrograms.map((p) => ({
           title: p.title,
           link: p.link,
@@ -554,7 +548,6 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "좀 더 자세한 소상공인 지원사업 정보를 알고싶다면, 다음 사이트를 참고해주세요.",
-        time: getCurrentTime(),
         subButtons: [
           {
             title: "북구청 소상공인 지원웹",
@@ -569,6 +562,7 @@ export default function ChatPage() {
       {
         from: "bot",
         subButtons: ["처음으로"],
+        time: getCurrentTime(),
       },
     ]);
   };
@@ -585,7 +579,7 @@ export default function ChatPage() {
       ...prev,
       {
         from: "bot",
-        text: `안녕하세요 고객님.북구청 소상공인 지원 챗봇입니다.궁금한 내용을 직접 입력하시거나아래 버튼에서 선택해 주세요.`,
+        text: "안녕하세요 고객님.\n북구청 소상공인 지원 챗봇입니다.\n궁금한 내용을 직접 입력하시거나 아래 버튼에서 선택해 주세요.",
         time: getCurrentTime(),
       },
     ]);
@@ -603,8 +597,8 @@ export default function ChatPage() {
       {
         from: "bot",
         text: "전국 단위 지원사업 중 원하시는 분야를 선택해주세요. (복수 선택 가능):",
-        time: getCurrentTime(),
         categoryButtons: categories,
+        time: getCurrentTime(),
       },
     ]);
   };
@@ -788,7 +782,7 @@ export default function ChatPage() {
 
 const styles = {
   window: {
-    width: "420px",
+    width: "450px",
     height: "650px",
     border: "1px solid #E5E5EC",
     margin: "20px auto",

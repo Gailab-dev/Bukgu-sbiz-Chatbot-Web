@@ -18,7 +18,7 @@ export default function ChatMessageList({
     if (chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isMenuOpen]);
 
   return (
     // 대화창
@@ -27,7 +27,7 @@ export default function ChatMessageList({
       id="chatBox"
       className={styles.chatBox}
       style={{
-        paddingBottom: isMenuOpen ? "170px" : "50px",
+        paddingBottom: isMenuOpen ? "80px" : "30px",
       }}
     >
       {/* 대화 내용 */}
