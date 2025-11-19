@@ -304,8 +304,10 @@ export default function ChatPage() {
       if (!res.data.loggedIn) {
         setMessages((prev) => [
           ...prev,
-          { from: "bot", text: res.data.message || "로그인이 필요합니다.", time: getCurrentTime() },
+          { from: "bot", text: res.data.message || "로그인이 필요합니다.상단의 로그인 버튼을 통해 로그인이 가능합니다", time: getCurrentTime() },
         ]);
+        // GUI 메뉴 다시 열기
+        setIsMenuOpen(true);
         return;
       }
 

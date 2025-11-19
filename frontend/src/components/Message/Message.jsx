@@ -29,9 +29,16 @@ export default function Message({
               {subButtons.map((btn, idx) => (
                 <button
                   key={idx}
-                  onClick={() => {
-                    if (typeof btn === "string") onSubButtonClick(btn);
-                    else window.open(btn.link, "_blank");
+                  type="button" // ✅ form submit 방지
+                  onClick={(e) => {
+                    e.preventDefault(); // ✅ 기본 동작 방지
+                    if (btn.onClick) {
+                      btn.onClick(); // ✅ handleFeatureClick 실행
+                    } else if (typeof btn === "string") {
+                      onSubButtonClick(btn);
+                    } else if (btn.link) {
+                      window.open(btn.link, "_blank"); // ✅ 외부 링크만 새 창으로
+                    }
                   }}
                   className={styles.subButton}
                 >
