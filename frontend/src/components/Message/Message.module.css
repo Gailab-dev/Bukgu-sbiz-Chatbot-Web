@@ -60,7 +60,7 @@
 
 .user .bubble { background: #333; border: 1px solid #000000; color: #fff;}
 
-.text { white-space: pre-wrap; word-break: break-word; }
+.text { white-space: pre-wrap; word-break: break-word;}
 
 .user .time { margin-top: 4px; font-size: 12px; color: var(--muted); 
   text-align: right;  opacity: .9; margin-right: 10px;}
@@ -76,8 +76,8 @@
 }
 
 .subButton{
-  background-color: #f5f7fb;
-  border: 1px solid #cfd8dc;
+  background-color: #F7F7F8;
+  border: none;
   border-radius: 12px;
   padding: 6px 10px;
   cursor: pointer;
@@ -86,7 +86,7 @@
 }
 
 .subButton:hover{
-  background-color: #e8eef5;
+  background-color: #E9EFFF;
 }
 
 .actionButtonBox {
@@ -99,7 +99,7 @@
   background-color: #fff;
   color: #4160B6;
   border: 1px solid #4160B6;
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 8px 16px;
   cursor: pointer;
   text-align: center;
@@ -123,10 +123,11 @@
 .categoryBtn {
   border: 1px solid #E5E5EC;
   border-radius: 20px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   cursor: pointer;
   font-size: 13px;
   transition: 0.2s;
+  flex: 0 0 139px;
 }
 
 .submitBtn {
@@ -136,7 +137,7 @@
   background-color: #fff;
   color: #4160B6;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 10px;
   font-size: 13px;
 }
 

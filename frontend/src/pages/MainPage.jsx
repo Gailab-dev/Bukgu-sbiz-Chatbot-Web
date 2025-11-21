@@ -39,7 +39,7 @@ export default function MainPage() {
     window.open(
       "/chat",
       "chatbotWindow",
-      "width=500,height=700,scrollbars=no,resizable=no"
+      "width=450,height=700,scrollbars=no,resizable=no"
     );
   };
 
