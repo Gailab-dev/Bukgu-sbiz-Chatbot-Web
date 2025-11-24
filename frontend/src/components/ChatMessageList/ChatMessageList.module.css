@@ -16,19 +16,9 @@
     font-weight: 500;
 }
 
-
-/* 태블릿 (768px ~ 1024px) */
-@media (max-width: 1024px) {
-  .container {
-    max-width: 100%;
-    padding: 15px;
-  }
-}
-
-/* 모바일 (768px 이하) */
-@media (max-width: 768px) {
-  .container {
-    max-width: 100%;
-    padding: 10px;
+/* Desktop (960px 이상) - 왼쪽 패딩 32px 추가 */
+@media (min-width: 960px) {
+  .chatBox {
+    padding-left: 32px;
   }
 }

@@ -787,8 +787,8 @@ export default function ChatPage() {
 
 const styles = {
   window: {
-    width: "450px",
-    height: "700px",
+    width: "100%",
+    height: "100vh",
     margin: "0 auto",
     display: "flex",
     flexDirection: "column",
