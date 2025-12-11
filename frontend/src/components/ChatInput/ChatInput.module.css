@@ -1,0 +1,22 @@
+:root{
+  --brand:#184375;
+  --panel:#ffffff;
+  --border:#e5e5ec;
+  --text:#1f2328;
+  --muted:#8a8f98;
+  --login:#767676
+}
+
+.inputbar{ display:flex;  padding:8px ; 
+     /* 모바일이나 테블릿의 경우 인디케이터 너비 신경써서 만들어야함 padding-bottom:calc(8px + env(safe-area-inset-bottom)); */
+    }
+.inputbar_field{ 
+    flex:1;
+    height:40px;
+    padding:0 12px;
+    border:1px solid var(--border); 
+    border-radius:100px; 
+    outline:none;}
+.inputbar_field:focus{border-color:#4160B6;}
+.inputbar_send:disabled{opacity:.6; cursor:default}
+.inputbar_icon{margin-left: 5px;}

@@ -1,0 +1,140 @@
+/* :root{
+  --bg:#ffffff;
+  --border:#e5e5ec;
+  --text:#000000;
+} */
+
+.buttonBox {
+  height: 98px;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background-color: #e0e6f9;
+  position: relative;
+  overflow: hidden;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+}
+
+.buttonBox.open {
+  max-height: 110px;
+}
+
+.buttonBox.closed {
+  max-height: 30px;
+}
+
+.toggleHandle {
+  width: 60px;
+  height: 5px;
+  background-color: #fff;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.buttonList {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 18px;
+  transition: opacity 0.3s ease;
+  width: 100%;
+}
+
+.buttonList.open {
+  opacity: 1;
+}
+
+.buttonList.closed {
+  opacity: 0;
+}
+
+.menuBtn {
+  flex: 1;
+  margin: 0 4px;
+  background-color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* .menuBtn:hover {
+  background-color: #bbdefb;
+} */
+
+.menuBtn:active {
+  transform: scale(0.98);
+}
+
+.menuIcon {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+/* 기존 스타일 유지 */
+.quick {
+  min-height: 120px;
+  padding: clamp(16px, 3vh, 35px) 13px;
+  background-color: #e0e6f9;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.handleArea {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.handleBar {
+  width: 40px;
+  height: 6px;
+  background: #c7d0ea;
+  border-radius: 3px;
+}
+
+.quick_track {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.quick_card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  flex: 0 1 auto;
+  width: clamp(90px, 20vw, 180px);
+  height: clamp(80px, 12vh, 98px);
+
+  border-radius: 12px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.quick_card:hover { filter: brightness(.98); }
+
+.quick_icon img{  width: clamp(36px, 6vw, 50px); }
+.quick_label { font-weight: 500; text-align: center; }

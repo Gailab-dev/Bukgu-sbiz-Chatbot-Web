@@ -1,0 +1,36 @@
+# Node / React build artifacts
+node_modules/
+frontend/build/
+
+# React build 결과 (static) 제외
+backend/src/main/resources/static/
+backend/src/main/resources/asset-manifest.json
+
+# Gradle / Java artifacts
+backend/.gradle/
+backend/bin/
+backend/build/
+backend/out/
+backend/*.log
+
+# IDE & editor folders
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Python virtual environments
+venv/
+*/venv/
+
+# SSL keystore
+backend/src/main/resources/*.p12
+
+# prevent accidental npm lockfile in backend
+backend/package-lock.json

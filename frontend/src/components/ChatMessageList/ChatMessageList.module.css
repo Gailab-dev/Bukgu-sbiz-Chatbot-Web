@@ -1,0 +1,24 @@
+.chatBox {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: padding-bottom 0.3s ease;
+}
+
+.dateSeparator {
+    text-align: center;
+    font-size: 12px;
+    color: #8a8f98;
+    margin: 20px 0 20px 0 ;
+    font-weight: 500;
+}
+
+/* Desktop (960px 이상) - 왼쪽 패딩 32px 추가 */
+@media (min-width: 960px) {
+  .chatBox {
+    padding-left: 32px;
+  }
+}
